@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"strconv"
 	"time"
 )
@@ -13,6 +14,10 @@ type Block struct {
 	Data         []byte
 	PreviousHash []byte
 	Hash         []byte
+}
+
+type Blockchain struct {
+	Blockchain []*Block `json:"blockchain"`
 }
 
 func NewBlock(index uint64, timestamp time.Time, data []byte, prevHash []byte) *Block {
@@ -28,6 +33,10 @@ func NewBlock(index uint64, timestamp time.Time, data []byte, prevHash []byte) *
 
 func (b *Block) HashHex() string {
 	return hex.EncodeToString(b.Hash)
+}
+
+func HexToBytes(hexS string) ([]byte, error) {
+	return hex.DecodeString(hexS)
 }
 
 func HashBlock(b *Block) []byte {
@@ -46,7 +55,15 @@ func HashBlock(b *Block) []byte {
 }
 
 func CreateGenesisBlock() *Block {
-	return NewBlock(0, time.Now(), []byte("Genesis Block"), []byte("0"))
+	newData := &POWData{
+		ProofOfWork:  0,
+		Transactions: []*Transaction{},
+	}
+	newDataBytes, err := json.Marshal(newData)
+	if err != nil {
+		panic("error marshalling new data for Genesis Block!")
+	}
+	return NewBlock(0, time.Now(), newDataBytes, []byte("0"))
 }
 
 func NextBlock(prev *Block) *Block {
