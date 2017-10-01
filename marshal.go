@@ -10,12 +10,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func errorResponse(w http.ResponseWriter, code int, err error) {
+type BasicResponse struct {
+	Message string `json:"message"`
+}
+
+func writeError(w http.ResponseWriter, code int, err error) {
 	bodyMap := gin.H{"error": gin.H{"message": err.Error()}}
 	writeJSON(w, code, bodyMap)
 }
 
 func writeJSON(w http.ResponseWriter, code int, obj map[string]interface{}) {
+	writeObject(w, code, obj)
+}
+
+func writeMessage(w http.ResponseWriter, code int, msg string) {
+	writeJSON(w, 200, map[string]interface{}{
+		"message": msg,
+	})
+}
+
+func writeObject(w http.ResponseWriter, code int, obj interface{}) {
 	jsonValue, _ := json.Marshal(obj)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -28,9 +42,10 @@ func writeJSON(w http.ResponseWriter, code int, obj map[string]interface{}) {
 func parseJSON(w http.ResponseWriter, r *http.Request, t interface{}) error {
 	err := parseJSONReader(r.Body, t)
 	if err != nil {
-		errorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request body, bad JSON: %v", err))
+		writeError(w, http.StatusBadRequest, fmt.Errorf("invalid request body, bad JSON: %v", err))
+		return err
 	}
-	return err
+	return nil
 }
 
 func parseJSONReader(r io.Reader, t interface{}) error {

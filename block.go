@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+type BlockWrapper struct {
+	Block *Block `json:"block"`
+}
+
 type Block struct {
 	Index        uint64
 	Timestamp    time.Time
@@ -45,12 +49,6 @@ func HashBlock(b *Block) []byte {
 	h.Write([]byte(strconv.FormatInt(b.Timestamp.UnixNano(), 10)))
 	h.Write(b.Data)
 	h.Write(b.PreviousHash)
-
-	// sha.update(str(self.index) +
-	//            str(self.timestamp) +
-	//            str(self.data) +
-	//            str(self.previous_hash))
-	// return sha.hexdigest()
 	return h.Sum(nil)
 }
 

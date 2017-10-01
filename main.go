@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 
 	"time"
@@ -26,35 +25,26 @@ var (
 	mining = true
 )
 
-type Node struct {
-	URL url.URL
-}
-
 func main() {
 	blockchain = []*Block{CreateGenesisBlock()}
 
 	r := chi.NewRouter()
 	r.Get("/mine", mine)
 	r.Post("/txion", transaction)
-	r.Get("/blocks", blocks)
+	r.Get("/blocks/latest", blocksLatest)
+	r.Get("/blocks/all", blocksAll)
+	r.Post("/blocks", blockReceived)
+
+	r.Get("/peers", peers)
+	r.Post("/peers/add", addPeer)
+	r.Get("/ping", ping)
 	port := ":" + getenv("PORT", "8080")
 	fmt.Println("Starting KissChain on port", port)
 	http.ListenAndServe(port, r)
+}
 
-	// This is example code to just generate random blocks:
-	// prevBlock := blockchain[0]
-	// // How many blocks should we add to the chain
-	// // after the genesis block
-	// numBlocksToAdd := 20
-	// // Add blocks to the chain
-	// for i := 0; i < numBlocksToAdd; i++ {
-	// 	b := NextBlock(prevBlock)
-	// 	blockchain = append(blockchain, b)
-	// 	prevBlock = b
-	// 	// Tell everyone about it!
-	// 	fmt.Printf("Block %v has been added to the blockchain!\n", b.Index)
-	// 	fmt.Printf("Hash: %v\n", b.HashHex())
-	// }
+func ping(w http.ResponseWriter, r *http.Request) {
+	writeMessage(w, 200, "pong")
 }
 
 func getenv(key, fallback string) string {
@@ -66,7 +56,6 @@ func getenv(key, fallback string) string {
 }
 
 func mine(w http.ResponseWriter, r *http.Request) {
-
 	// Get the last proof of work
 	lastBlock := blockchain[len(blockchain)-1]
 	lastData := &POWData{}
@@ -133,12 +122,6 @@ func transaction(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 201, map[string]interface{}{
 		"message": "Transaction successful",
 	})
-}
-
-func blocks(w http.ResponseWriter, r *http.Request) {
-	ret := map[string]interface{}{}
-	ret["blockchain"] = blockchain
-	writeJSON(w, http.StatusOK, ret)
 }
 
 func findNewChains() ([]*Blockchain, error) {
